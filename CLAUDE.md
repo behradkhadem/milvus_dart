@@ -126,7 +126,10 @@ See `docs/01-architecture.md` for the full layout. Key points:
 - `lib/src/transport/transport.dart` — abstract `Transport` interface
 - `lib/src/transport/http_transport.dart` — REST implementation; accepts optional `http.Client` for test injection
 - `lib/src/api/*.dart` — one file per resource domain; constructor takes `Transport`, no networking code
+  - Phase 1: `collection_api`, `index_api`, `partition_api`, `entity_api`, `search_api`
+  - Phase 2: `database_api`, `alias_api`, `bulk_import_api`, `user_api`, `role_api`, `resource_group_api`
 - `lib/src/models/` — immutable value objects with `fromJson`/`toJson`
+  - Subdirs: `collection/`, `database/`, `alias/`, `entity/`, `index/`, `partition/`, `bulk_import/`, `user/`, `role/`, `resource_group/`, `schema/`, `search/`
 - `test/helpers/fake_transport.dart` — write this file first, before any API code
 
 ---
@@ -236,17 +239,31 @@ Dev dependencies allowed: `test`, `lints`, `build_runner` (Phase 3 only), `mocki
 
 Do not start Phase N+1 while Phase N has any unchecked item.
 
-### Phase 1 gate (before any Phase 2 work)
-- [ ] All `lib/src/api/` methods for: collection, index, partition, entity, search
-- [ ] `FakeTransport` and all unit tests in `test/unit/`
-- [ ] `HttpTransport` with injectable `http.Client`, full error handling
-- [ ] `MilvusException` hierarchy
-- [ ] `VectorEncoding` for all 5 types, with tests
-- [ ] Round-trip serialization tests for all models
+### Phase 1 gate ✅ complete
+- [x] All `lib/src/api/` methods for: collection, index, partition, entity, search
+- [x] `FakeTransport` and all unit tests in `test/unit/`
+- [x] `HttpTransport` with injectable `http.Client`, full error handling
+- [x] `MilvusException` hierarchy
+- [x] `VectorEncoding` for all 5 types, with tests
+- [x] Round-trip serialization tests for all models
 - [ ] `example/main.dart` runs against a real Milvus instance
 - [ ] Coverage ≥ 88%
-- [ ] `dart analyze` zero issues
+- [x] `dart analyze` zero issues
 - [ ] `dart pub publish --dry-run` passes
+
+### Phase 2 gate (before any Phase 3 work)
+- [x] Database API — `createDatabase`, `dropDatabase`, `listDatabases`, `describeDatabase`, `alterDatabaseProperties`
+- [x] Alias API — `createAlias`, `dropAlias`, `alterAlias`, `listAliases`, `describeAlias`
+- [x] Collection extras — `renameCollection`, `compactCollection`, `alterCollectionProperties`
+- [x] Hybrid search — `hybridSearch(HybridSearchRequest)` with `WeightedRanker` / `RRFRanker` sealed class
+- [x] Bulk import — `bulkImport`, `getBulkImportState`, `listBulkImportJobs`
+- [x] User API — `createUser`, `dropUser`, `updatePassword`, `listUsers`, `describeUser`, `grantRole`, `revokeRole`
+- [x] Role API — `createRole`, `dropRole`, `listRoles`, `describeRole`, `grantPrivilege`, `revokePrivilege`
+- [x] Resource group API — `createResourceGroup`, `dropResourceGroup`, `describeResourceGroup`, `listResourceGroups`, `transferNode`, `transferReplica`
+- [x] All new APIs wired into `MilvusClient` and exported from barrel
+- [ ] `example/main.dart` updated with Phase 2 features
+- [x] `dart analyze` zero issues
+- [x] All unit tests passing (213 tests)
 
 ---
 

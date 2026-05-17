@@ -211,4 +211,113 @@ void main() {
       expect(state, LoadState.loaded);
     });
   });
+
+  group('renameCollection', () {
+    test('posts to correct path', () async {
+      transport.setResponse('/v2/vectordb/collections/rename', {});
+      await api.renameCollection('old_col', 'new_col');
+      expect(
+        transport.calls.single.path,
+        '/v2/vectordb/collections/rename',
+      );
+    });
+
+    test('body contains old and new names', () async {
+      transport.setResponse('/v2/vectordb/collections/rename', {});
+      await api.renameCollection('old_col', 'new_col');
+      final body = transport.calls.single.body;
+      expect(body['collectionName'], 'old_col');
+      expect(body['newCollectionName'], 'new_col');
+    });
+
+    test('body includes dbName when set', () async {
+      transport.setResponse('/v2/vectordb/collections/rename', {});
+      await api.renameCollection('old_col', 'new_col', dbName: 'my_db');
+      expect(transport.calls.single.body['dbName'], 'my_db');
+    });
+
+    test('propagates MilvusException', () async {
+      transport.setError(
+        '/v2/vectordb/collections/rename',
+        MilvusException(1, 'error'),
+      );
+      expect(
+        () => api.renameCollection('old_col', 'new_col'),
+        throwsA(isA<MilvusException>()),
+      );
+    });
+  });
+
+  group('compactCollection', () {
+    test('posts to correct path', () async {
+      transport.setResponse(
+        '/v2/vectordb/collections/compact',
+        {'jobID': 'job_123'},
+      );
+      await api.compactCollection('test_col');
+      expect(
+        transport.calls.single.path,
+        '/v2/vectordb/collections/compact',
+      );
+    });
+
+    test('returns jobID string', () async {
+      transport.setResponse(
+        '/v2/vectordb/collections/compact',
+        {'jobID': 'job_456'},
+      );
+      final jobId = await api.compactCollection('test_col');
+      expect(jobId, 'job_456');
+    });
+
+    test('propagates MilvusException', () async {
+      transport.setError(
+        '/v2/vectordb/collections/compact',
+        MilvusException(1, 'error'),
+      );
+      expect(
+        () => api.compactCollection('test_col'),
+        throwsA(isA<MilvusException>()),
+      );
+    });
+  });
+
+  group('alterCollectionProperties', () {
+    test('posts to correct path', () async {
+      transport.setResponse(
+        '/v2/vectordb/collections/alter_properties',
+        {},
+      );
+      await api.alterCollectionProperties('test_col', {'ttl': 100});
+      expect(
+        transport.calls.single.path,
+        '/v2/vectordb/collections/alter_properties',
+      );
+    });
+
+    test('body contains collectionName and properties', () async {
+      transport.setResponse(
+        '/v2/vectordb/collections/alter_properties',
+        {},
+      );
+      await api.alterCollectionProperties(
+        'test_col',
+        {'collection.ttl.seconds': 86400},
+      );
+      final body = transport.calls.single.body;
+      expect(body['collectionName'], 'test_col');
+      expect(body['properties'], {'collection.ttl.seconds': 86400});
+    });
+
+    test('propagates MilvusException', () async {
+      transport.setError(
+        '/v2/vectordb/collections/alter_properties',
+        MilvusException(1, 'error'),
+      );
+      expect(
+        () => api.alterCollectionProperties('test_col', {}),
+        throwsA(isA<MilvusException>()),
+      );
+    });
+  });
 }

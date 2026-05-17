@@ -1,8 +1,14 @@
+import '../api/alias_api.dart';
+import '../api/bulk_import_api.dart';
 import '../api/collection_api.dart';
+import '../api/database_api.dart';
 import '../api/entity_api.dart';
 import '../api/index_api.dart';
 import '../api/partition_api.dart';
+import '../api/resource_group_api.dart';
+import '../api/role_api.dart';
 import '../api/search_api.dart';
+import '../api/user_api.dart';
 import '../transport/http_transport.dart';
 import '../transport/transport.dart';
 import 'client_config.dart';
@@ -35,8 +41,26 @@ class MilvusClient {
   /// Entity insert / upsert / delete / get operations.
   late final EntityApi entities;
 
-  /// ANN search and scalar query operations.
+  /// ANN search, hybrid search, and scalar query operations.
   late final SearchApi search;
+
+  /// Database (multi-tenancy) management operations.
+  late final DatabaseApi databases;
+
+  /// Collection alias management operations.
+  late final AliasApi aliases;
+
+  /// Bulk import job operations.
+  late final BulkImportApi bulkImport;
+
+  /// User management operations.
+  late final UserApi users;
+
+  /// Role and privilege management operations.
+  late final RoleApi roles;
+
+  /// Resource group management operations.
+  late final ResourceGroupApi resourceGroups;
 
   /// Creates a client that connects to Milvus using [config].
   MilvusClient(MilvusConfig config)
@@ -55,6 +79,12 @@ class MilvusClient {
     partitions = PartitionApi(_transport);
     entities = EntityApi(_transport);
     search = SearchApi(_transport);
+    databases = DatabaseApi(_transport);
+    aliases = AliasApi(_transport);
+    bulkImport = BulkImportApi(_transport);
+    users = UserApi(_transport);
+    roles = RoleApi(_transport);
+    resourceGroups = ResourceGroupApi(_transport);
   }
 
   /// Releases underlying transport resources.

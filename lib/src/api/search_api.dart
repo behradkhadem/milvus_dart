@@ -1,3 +1,4 @@
+import '../models/search/hybrid_search_request.dart';
 import '../models/search/query_request.dart';
 import '../models/search/search_request.dart';
 import '../models/search/search_result.dart';
@@ -39,6 +40,22 @@ class SearchApi {
     );
     return (data as List<dynamic>)
         .map((e) => e as Map<String, dynamic>)
+        .toList();
+  }
+
+  /// Runs a hybrid multi-vector search with reranking.
+  ///
+  /// Each [HybridSearchRequest.searches] leg targets a different vector field.
+  /// Results from all legs are merged by the configured [HybridSearchRequest.reranker].
+  ///
+  /// Returns hits sorted by the reranker's merged score.
+  Future<List<SearchHit>> hybridSearch(HybridSearchRequest request) async {
+    final data = await _transport.post(
+      '/v2/vectordb/entities/hybrid_search',
+      request.toJson(),
+    );
+    return (data as List<dynamic>)
+        .map((hit) => SearchHit.fromJson(hit as Map<String, dynamic>))
         .toList();
   }
 }

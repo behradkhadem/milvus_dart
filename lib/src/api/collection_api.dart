@@ -97,4 +97,40 @@ class CollectionApi {
     final json = data as Map<String, dynamic>;
     return LoadState.fromValue(json['loadState'] as String);
   }
+
+  /// Renames [oldName] to [newName].
+  Future<void> renameCollection(
+    String oldName,
+    String newName, {
+    String? dbName,
+  }) async {
+    await _transport.post('/v2/vectordb/collections/rename', {
+      'collectionName': oldName,
+      'newCollectionName': newName,
+      if (dbName != null) 'dbName': dbName,
+    });
+  }
+
+  /// Triggers a compaction job for [name] and returns the job ID.
+  Future<String> compactCollection(String name, {String? dbName}) async {
+    final data = await _transport.post('/v2/vectordb/collections/compact', {
+      'collectionName': name,
+      if (dbName != null) 'dbName': dbName,
+    });
+    final json = data as Map<String, dynamic>;
+    return json['jobID'] as String;
+  }
+
+  /// Updates [properties] on [name].
+  Future<void> alterCollectionProperties(
+    String name,
+    Map<String, dynamic> properties, {
+    String? dbName,
+  }) async {
+    await _transport.post('/v2/vectordb/collections/alter_properties', {
+      'collectionName': name,
+      'properties': properties,
+      if (dbName != null) 'dbName': dbName,
+    });
+  }
 }
