@@ -7,7 +7,10 @@
 
 The first unofficial Dart/Flutter client for [Milvus](https://milvus.io) — the open-source, high-performance vector database built for AI applications.
 
-Targets **Milvus 2.5.x / 2.6.x** via REST API v2. Works on every Flutter target including Web. gRPC transport is planned for Phase 3.
+Targets **Milvus 2.5.x / 2.6.x**. Ships with two transports:
+
+- **REST** (`MilvusClient`) — HTTP/2 + JSON, works on every Flutter target including Web.
+- **gRPC** (`MilvusClient.grpc`) — binary protobuf, lower latency, native platforms only.
 
 ---
 
@@ -27,6 +30,8 @@ Targets **Milvus 2.5.x / 2.6.x** via REST API v2. Works on every Flutter target 
 | **Roles (RBAC)** | create, drop, list, describe, grant/revoke privilege |
 | **Resource groups** | create, drop, describe, list, transfer node/replica |
 | **Vector types** | `FloatVector`, `BinaryVector`, `Float16Vector`, `BFloat16Vector`, `SparseFloatVector` |
+| **Transport** | REST (all platforms, including Web) or gRPC (native platforms) — same API, swap one constructor |
+| **Iterators** | `SearchIterator`, `QueryIterator` — cursor-based paging that works around the 16,384 offset ceiling |
 
 ---
 
@@ -58,6 +63,15 @@ void main() async {
 
   await client.close();
 }
+```
+
+Switch to gRPC with a single constructor change — the rest of the API is identical:
+
+```dart
+// gRPC transport — lower latency, native platforms only
+final client = MilvusClient.grpc(
+  MilvusConfig(host: 'localhost', port: 19530),
+);
 ```
 
 For Zilliz Cloud or token-secured self-hosted Milvus:
@@ -209,6 +223,49 @@ final hits = await client.search.hybridSearch(
 );
 ```
 
+### Paginate with iterators
+
+Milvus caps `offset + limit` at 16,384. Use `SearchIterator` or `QueryIterator` to page past that ceiling transparently:
+
+```dart
+// Stream all matching query rows, 200 at a time
+final iterator = QueryIterator(
+  transport: client.transport,  // via MilvusClient.withTransport or direct access
+  request: QueryRequest(
+    collectionName: 'articles',
+    filter: 'year > 2020',
+    outputFields: ['id', 'title'],
+  ),
+  pageSize: 200,
+);
+
+await for (final page in iterator.pages()) {
+  for (final row in page) {
+    print(row['title']);
+  }
+}
+```
+
+```dart
+// Stream ANN search results page by page
+final iterator = SearchIterator(
+  transport: transport,
+  request: SearchRequest(
+    collectionName: 'articles',
+    vectors: [queryVector],
+    annsField: 'embedding',
+    limit: 1000,
+  ),
+  pageSize: 100,
+);
+
+await for (final page in iterator.pages()) {
+  for (final hit in page.first) {  // page.first = hits for the first query vector
+    print('${hit.id}  ${hit.distance}');
+  }
+}
+```
+
 ### Delete entities
 
 ```dart
@@ -276,15 +333,15 @@ try {
 
 ## Platform support
 
-| Platform | Supported | Notes |
-|---|---|---|
-| Android | ✅ | |
-| iOS | ✅ | |
-| Web | ✅ | REST-only (no `dart:io` in transport) |
-| macOS | ✅ | |
-| Linux | ✅ | |
-| Windows | ✅ | |
-| Server-side Dart | ✅ | Pure Dart, no Flutter dependency |
+| Platform | REST | gRPC | Notes |
+|---|---|---|---|
+| Android | ✅ | ✅ | |
+| iOS | ✅ | ✅ | |
+| Web | ✅ | ❌ | gRPC uses `dart:io`, unavailable on Web |
+| macOS | ✅ | ✅ | |
+| Linux | ✅ | ✅ | |
+| Windows | ✅ | ✅ | |
+| Server-side Dart | ✅ | ✅ | Pure Dart, no Flutter dependency |
 
 ---
 
@@ -324,7 +381,7 @@ final client = MilvusClient.withTransport(myFakeTransport);
 |---|---|---|
 | **Phase 1** — Core MVP | ✅ Done | Collections, indexes, partitions, entities, search |
 | **Phase 2** — Full REST parity | ✅ Done | Databases, aliases, bulk import, users, roles, resource groups, hybrid search |
-| **Phase 3** — gRPC + iterators | Planned | gRPC transport, query/search iterators, streaming results |
+| **Phase 3** — gRPC + iterators | ✅ Done | gRPC transport (`MilvusClient.grpc`), `SearchIterator`, `QueryIterator` |
 | **pub.dev publish** | Planned | After example and coverage gates pass |
 
 ---

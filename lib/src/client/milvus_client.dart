@@ -9,6 +9,8 @@ import '../api/resource_group_api.dart';
 import '../api/role_api.dart';
 import '../api/search_api.dart';
 import '../api/user_api.dart';
+import '../transport/grpc_transport_stub.dart'
+    if (dart.library.io) '../transport/grpc_transport.dart';
 import '../transport/http_transport.dart';
 import '../transport/transport.dart';
 import 'client_config.dart';
@@ -62,9 +64,18 @@ class MilvusClient {
   /// Resource group management operations.
   late final ResourceGroupApi resourceGroups;
 
-  /// Creates a client that connects to Milvus using [config].
+  /// Creates a client that connects to Milvus via REST (HTTP/2) using [config].
   MilvusClient(MilvusConfig config)
       : _transport = HttpTransport(config) {
+    _init();
+  }
+
+  /// Creates a client that connects to Milvus via gRPC using [config].
+  ///
+  /// Not supported on Flutter Web — use the default [MilvusClient] constructor
+  /// (REST) on that platform.
+  MilvusClient.grpc(MilvusConfig config)
+      : _transport = GrpcTransport(config) {
     _init();
   }
 

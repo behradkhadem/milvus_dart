@@ -41,6 +41,8 @@ export 'src/models/schema/field_schema.dart';
 export 'src/models/schema/index_type.dart';
 export 'src/models/schema/metric_type.dart';
 export 'src/models/schema/vector_encoding.dart';
+export 'src/iterators/query_iterator.dart';
+export 'src/iterators/search_iterator.dart';
 export 'src/models/search/ann_search_request.dart';
 export 'src/models/search/hybrid_search_request.dart';
 export 'src/models/search/query_request.dart';
