@@ -1,249 +1,403 @@
 # milvus_dart
 
+[![pub.dev](https://img.shields.io/pub/v/milvus_dart.svg)](https://pub.dev/packages/milvus_dart)
+[![Dart SDK](https://img.shields.io/badge/dart-%3E%3D3.0-blue)](https://dart.dev)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-android%20%7C%20ios%20%7C%20web%20%7C%20desktop-lightgrey)](https://pub.dev/packages/milvus_dart)
+
 The first unofficial Dart/Flutter client for [Milvus](https://milvus.io) — the open-source, high-performance vector database built for AI applications.
 
-No official or community Dart SDK exists for Milvus. This package fills that gap, enabling Flutter and pure Dart applications to connect directly to Milvus without a backend proxy.
+Targets **Milvus 2.5.x / 2.6.x**. Ships with two transports:
+
+- **REST** (`MilvusClient`) — HTTP/2 + JSON, works on every Flutter target including Web.
+- **gRPC** (`MilvusClient.grpc`) — binary protobuf, lower latency, native platforms only.
 
 ---
 
-## Why this package exists
+## Features
 
-The official Milvus SDKs cover Python, Java, Go, Node.js, and C#. Flutter developers currently have no direct path to Milvus — the recommended workaround is to stand up a separate backend that proxies requests. This package eliminates that requirement, making on-device or edge AI applications with vector search possible in Flutter.
-
----
-
-## Target Milvus version
-
-Milvus **2.5.x / 2.6.x** (REST API v2). gRPC support planned for Phase 3.
-
----
-
-## Feature coverage plan
-
-### Phase 1 — Core (MVP)
-
-**Connection & configuration**
-- Connect via host + port + optional token/API key
-- TLS/HTTPS support
-- Per-request database targeting
-- Configurable timeouts and retry policy
-
-**Collection management**
-- `createCollection` — with full schema definition
-- `dropCollection`
-- `describeCollection`
-- `listCollections`
-- `hasCollection`
-- `loadCollection` / `releaseCollection`
-- `getCollectionStats`
-- `getLoadState`
-
-**Schema & field types**
-
-Scalar fields: `INT8`, `INT16`, `INT32`, `INT64`, `FLOAT`, `DOUBLE`, `VARCHAR`, `BOOL`, `JSON`, `ARRAY`
-
-Vector fields: `FLOAT_VECTOR`, `BINARY_VECTOR`, `FLOAT16_VECTOR`, `BFLOAT16_VECTOR`, `SPARSE_FLOAT_VECTOR`
-
-Schema options: primary key, auto-ID, nullable fields, default values, `enable_dynamic_field`
-
-**Index management**
-- `createIndex`
-- `dropIndex`
-- `describeIndex`
-- `listIndexes`
-
-Supported index types:
-- In-memory: `FLAT`, `IVF_FLAT`, `IVF_SQ8`, `IVF_PQ`, `HNSW`, `SCANN`
-- On-disk: `DiskANN`
-- Binary: `BIN_FLAT`, `BIN_IVF_FLAT`
-- Sparse: `SPARSE_INVERTED_INDEX`, `SPARSE_WAND`
-- Scalar: `INVERTED`, `STL_SORT`, `BITMAP`, `TRIE`
-- GPU (optional): `GPU_IVF_FLAT`, `GPU_IVF_PQ`, `GPU_CAGRA`, `GPU_BRUTE_FORCE`
-
-Metric types: `L2`, `IP`, `COSINE`, `JACCARD`, `HAMMING`
-
-**Partition management**
-- `createPartition` / `dropPartition`
-- `hasPartition` / `listPartitions`
-- `loadPartitions` / `releasePartitions`
-- `getPartitionStats`
-
-**Entity operations**
-- `insert` — single entity or batch
-- `upsert`
-- `delete` — by primary keys or filter expression
-- `get` — fetch by primary keys
-
-**Search & query**
-- `search` — ANN vector similarity search with optional scalar filter
-- `query` — pure scalar filtering with pagination
-- Range search (within a distance threshold)
-- Grouping search (deduplicate by field)
-- Output field selection
+| Category | What's included |
+|---|---|
+| **Collections** | create, drop, describe, list, load, release, stats, load state, rename, compact, alter properties |
+| **Indexes** | create, drop, describe, list — HNSW, IVF_FLAT, IVF_SQ8, FLAT, DiskANN, sparse, binary, GPU, scalar |
+| **Partitions** | create, drop, has, list, load, release, stats |
+| **Entities** | insert, upsert, delete (by IDs or filter), get by IDs |
+| **Search & Query** | ANN vector search, scalar query, range search, grouping search, hybrid multi-vector search with WeightedRanker / RRFRanker |
+| **Databases** | create, drop, list, describe, alter properties |
+| **Aliases** | create, drop, alter, list, describe |
+| **Bulk import** | submit, get state, list jobs |
+| **Users (RBAC)** | create, drop, update password, list, describe, grant/revoke role |
+| **Roles (RBAC)** | create, drop, list, describe, grant/revoke privilege |
+| **Resource groups** | create, drop, describe, list, transfer node/replica |
+| **Vector types** | `FloatVector`, `BinaryVector`, `Float16Vector`, `BFloat16Vector`, `SparseFloatVector` |
+| **Transport** | REST (all platforms, including Web) or gRPC (native platforms) — same API, swap one constructor |
+| **Iterators** | `SearchIterator`, `QueryIterator` — cursor-based paging that works around the 16,384 offset ceiling |
 
 ---
 
-### Phase 2 — Full REST API parity
+## Installation
 
-**Database management**
-- `createDatabase` / `dropDatabase`
-- `listDatabases` / `describeDatabase`
-- Alter database properties
-
-**Alias management**
-- `createAlias` / `dropAlias`
-- `describeAlias` / `listAliases`
-- `alterAlias`
-
-**Advanced search**
-- Hybrid search (multi-vector ANN + reranking)
-  - `WeightedRanker`
-  - `RRFRanker` (Reciprocal Rank Fusion)
-- Full-text search (BM25 / Sparse-BM25)
-- Dense + sparse combined search
-
-**Bulk import**
-- `bulkImport` — from remote storage (S3, MinIO, etc.)
-- `getBulkImportState`
-- `listBulkImportJobs`
-
-**Collection extras**
-- `renameCollection`
-- `compactCollection`
-- Alter collection properties
-
-**User & role management (RBAC)**
-- Users: create, drop, update password, list, describe
-- Roles: create, drop, list, describe
-- Privilege grants: grant/revoke privilege to/from role
-- Role assignment: grant/revoke role to/from user
-- Privilege groups: create, drop, list, add/remove privileges
-
-**Resource group management**
-- `createResourceGroup` / `dropResourceGroup`
-- `describeResourceGroup` / `listResourceGroups`
-- `transferNode` / `transferReplica`
-
----
-
-### Phase 3 — gRPC transport + advanced
-
-- gRPC transport (for non-web platforms: iOS, Android, desktop, server)
-  - Pluggable transport interface so REST and gRPC are interchangeable
-  - Full feature parity via `milvus-proto` generated stubs
-- Query and search iterators (cursor-based pagination over large result sets)
-- Streaming results (gRPC server-side streaming)
-- Clustering compaction trigger
-- JSON path indexing support
-- Partial field update on upsert (Milvus 2.6+)
-- Connection pooling
-
----
-
-## Architecture overview
+```yaml
+dependencies:
+  milvus_dart: ^0.1.0
+```
 
 ```
-milvus_dart/
-├── lib/
-│   ├── milvus_dart.dart            # barrel export
-│   └── src/
-│       ├── client/
-│       │   ├── milvus_client.dart  # public MilvusClient
-│       │   └── client_config.dart  # host, port, token, tls, timeouts
-│       ├── transport/
-│       │   ├── transport.dart          # abstract Transport interface
-│       │   ├── http_transport.dart     # REST/HTTP implementation (Phase 1+2)
-│       │   └── grpc_transport.dart     # gRPC implementation (Phase 3)
-│       ├── api/
-│       │   ├── collection_api.dart
-│       │   ├── partition_api.dart
-│       │   ├── index_api.dart
-│       │   ├── entity_api.dart
-│       │   ├── search_api.dart
-│       │   ├── database_api.dart
-│       │   ├── alias_api.dart
-│       │   ├── user_api.dart
-│       │   ├── role_api.dart
-│       │   └── resource_group_api.dart
-│       ├── models/
-│       │   ├── collection/
-│       │   ├── schema/
-│       │   ├── index/
-│       │   ├── search/
-│       │   └── auth/
-│       └── exceptions/
-│           ├── milvus_exception.dart
-│           └── error_codes.dart
-├── test/
-│   ├── unit/
-│   └── integration/
-├── example/
-├── proto/                          # Phase 3: milvus-proto files
-├── pubspec.yaml
-├── analysis_options.yaml
-├── CHANGELOG.md
-└── CLAUDE.md
+dart pub get
 ```
 
 ---
 
-## Key design decisions
+## Quick start
 
-**REST-first**: The REST API v2 has near-complete feature parity in Milvus 2.5+ and works on every Flutter target (iOS, Android, Web, Desktop). gRPC does not work on Flutter Web, so REST is the universal baseline.
+```dart
+import 'package:milvus_dart/milvus_dart.dart';
 
-**Pluggable transport**: A `Transport` abstract class lets callers swap REST for gRPC without changing their application code. This keeps the migration to Phase 3 non-breaking.
+void main() async {
+  final client = MilvusClient(
+    MilvusConfig(host: 'localhost', port: 19530),
+  );
 
-**Strongly typed models**: All request/response objects are Dart classes with `fromJson`/`toJson`. No `Map<String, dynamic>` leaks into the public API.
+  final names = await client.collections.listCollections();
+  print(names);
 
-**Idiomatic Dart**: `async`/`await` throughout. Errors throw typed `MilvusException` subclasses, not raw strings. Named constructors and factory patterns follow Dart conventions.
+  await client.close();
+}
+```
 
-**Flutter Web compatible**: Phase 1 and 2 use `package:http` (or `package:dio`) — both work on Flutter Web. No `dart:io` sockets in the REST transport.
+Switch to gRPC with a single constructor change — the rest of the API is identical:
+
+```dart
+// gRPC transport — lower latency, native platforms only
+final client = MilvusClient.grpc(
+  MilvusConfig(host: 'localhost', port: 19530),
+);
+```
+
+For Zilliz Cloud or token-secured self-hosted Milvus:
+
+```dart
+final client = MilvusClient(
+  MilvusConfig(
+    host: 'your-cluster.zillizcloud.com',
+    port: 443,
+    useTls: true,
+    token: 'your-api-key',         // Zilliz Cloud API key
+    // token: 'user:password',      // or base64-encode user:password for self-hosted
+  ),
+);
+```
 
 ---
 
-## What to consider when implementing
+## Usage examples
 
-1. **Authentication**: Milvus supports token-based auth (username:password Base64 or API keys). Always send the `Authorization` header.
-2. **Error handling**: Milvus returns HTTP 200 even for logical errors; always check `code` in the JSON body.
-3. **Pagination**: `query` has a 16,384 limit+offset cap; document and enforce this.
-4. **Vector encoding**: Float vectors are JSON arrays; binary vectors are base64-encoded byte arrays; sparse vectors are `{index: value}` maps.
-5. **Connection lifecycle**: Channels (gRPC) and HTTP clients should be singleton-per-client-instance, not per-call.
-6. **Null safety**: Full sound null safety from day one.
-7. **pub.dev score**: Pass `dart analyze` cleanly, include `LICENSE`, `CHANGELOG.md`, and complete `pubspec.yaml` metadata.
-8. **Integration tests**: Require a live Milvus instance (Docker). Unit tests mock the transport layer.
-9. **Milvus version matrix**: Target 2.5.x as minimum; document any 2.6-only features clearly.
-10. **No dependency on flutter**: Keep `lib/` free of Flutter imports — pure Dart so the package works in server-side Dart too.
+### Create a collection
+
+```dart
+await client.collections.createCollection(
+  CreateCollectionRequest(
+    collectionName: 'articles',
+    schema: CollectionSchema(
+      enableDynamicField: true,
+      fields: [
+        FieldSchema(
+          fieldName: 'id',
+          dataType: DataType.int64,
+          isPrimaryKey: true,
+        ),
+        FieldSchema(
+          fieldName: 'title',
+          dataType: DataType.varChar,
+          elementTypeParams: {'max_length': 512},
+        ),
+        FieldSchema(
+          fieldName: 'embedding',
+          dataType: DataType.floatVector,
+          elementTypeParams: {'dim': 768},
+        ),
+      ],
+    ),
+    // Supplying indexParams auto-loads the collection after creation.
+    indexParams: [
+      IndexParams(
+        fieldName: 'embedding',
+        indexName: 'embedding_hnsw',
+        metricType: MetricType.cosine,
+        indexType: IndexType.hnsw,
+        params: {'M': 16, 'efConstruction': 200},
+      ),
+    ],
+  ),
+);
+```
+
+### Insert vectors
+
+```dart
+final result = await client.entities.insert(
+  InsertRequest(
+    collectionName: 'articles',
+    data: [
+      {
+        'id': 1,
+        'title': 'Introduction to vector databases',
+        'embedding': List.generate(768, (i) => i * 0.001),
+      },
+      {
+        'id': 2,
+        'title': 'Building RAG applications with Flutter',
+        'embedding': List.generate(768, (i) => i * 0.002),
+      },
+    ],
+  ),
+);
+print('Inserted ${result.insertCount} rows');
+```
+
+### ANN vector search
+
+```dart
+final queryVector = List.generate(768, (i) => i * 0.001);
+
+final results = await client.search.search(
+  SearchRequest(
+    collectionName: 'articles',
+    vectors: [queryVector],
+    annsField: 'embedding',
+    limit: 5,
+    outputFields: ['id', 'title'],
+    searchParams: {
+      'metricType': 'COSINE',
+      'params': {'ef': 64},
+    },
+  ),
+);
+
+for (final hit in results.first) {
+  print('id=${hit.id}  distance=${hit.distance}  title=${hit.entity['title']}');
+}
+```
+
+### Scalar query (filter without vectors)
+
+```dart
+final rows = await client.search.query(
+  QueryRequest(
+    collectionName: 'articles',
+    filter: 'id in [1, 2]',
+    outputFields: ['id', 'title'],
+    limit: 10,
+  ),
+);
+```
+
+### Hybrid search (dense + sparse with reranking)
+
+Hybrid search lets you combine a dense-vector ANN search with a sparse BM25 search and merge results using a reranker — a common pattern for retrieval-augmented generation (RAG).
+
+```dart
+final hits = await client.search.hybridSearch(
+  HybridSearchRequest(
+    collectionName: 'articles',
+    searches: [
+      // Dense vector leg
+      AnnSearchRequest(
+        data: [denseQueryVector],
+        annsField: 'dense_embedding',
+        limit: 20,
+        searchParams: {'metricType': 'COSINE', 'params': {'ef': 64}},
+      ),
+      // Sparse vector leg (BM25)
+      AnnSearchRequest(
+        data: [{'3': 0.8, '17': 0.2, '42': 0.5}],
+        annsField: 'sparse_embedding',
+        limit: 20,
+        searchParams: {'metricType': 'IP', 'params': {'drop_ratio_search': 0.2}},
+      ),
+    ],
+    reranker: RRFRanker(),          // or WeightedRanker([0.6, 0.4])
+    limit: 10,
+    outputFields: ['id', 'title'],
+  ),
+);
+```
+
+### Paginate with iterators
+
+Milvus caps `offset + limit` at 16,384. Use `SearchIterator` or `QueryIterator` to page past that ceiling transparently:
+
+```dart
+// Stream all matching query rows, 200 at a time
+final iterator = QueryIterator(
+  transport: client.transport,  // via MilvusClient.withTransport or direct access
+  request: QueryRequest(
+    collectionName: 'articles',
+    filter: 'year > 2020',
+    outputFields: ['id', 'title'],
+  ),
+  pageSize: 200,
+);
+
+await for (final page in iterator.pages()) {
+  for (final row in page) {
+    print(row['title']);
+  }
+}
+```
+
+```dart
+// Stream ANN search results page by page
+final iterator = SearchIterator(
+  transport: transport,
+  request: SearchRequest(
+    collectionName: 'articles',
+    vectors: [queryVector],
+    annsField: 'embedding',
+    limit: 1000,
+  ),
+  pageSize: 100,
+);
+
+await for (final page in iterator.pages()) {
+  for (final hit in page.first) {  // page.first = hits for the first query vector
+    print('${hit.id}  ${hit.distance}');
+  }
+}
+```
+
+### Delete entities
+
+```dart
+// By primary key list:
+await client.entities.delete(
+  DeleteRequest(collectionName: 'articles', ids: [1, 2]),
+);
+
+// Or by filter expression:
+await client.entities.delete(
+  DeleteRequest(collectionName: 'articles', filter: 'id > 100'),
+);
+```
+
+### Database multi-tenancy
+
+```dart
+await client.databases.createDatabase('tenant_a');
+
+// Scope all operations to a specific database:
+final config = MilvusConfig(host: 'localhost', database: 'tenant_a');
+final tenantClient = MilvusClient(config);
+```
+
+### User & role management (RBAC)
+
+```dart
+await client.users.createUser('alice', 'secret123');
+await client.roles.createRole('read_only');
+await client.roles.grantPrivilege('read_only', 'collection', 'Query', '*');
+await client.users.grantRole('alice', 'read_only');
+```
 
 ---
 
-## Dependencies (planned)
+## Error handling
 
-| Package | Purpose |
-|---------|---------|
-| `http` or `dio` | REST transport (Phase 1+2) |
-| `grpc` | gRPC transport (Phase 3) |
-| `protobuf` | Proto message serialization (Phase 3) |
-| `meta` | `@immutable`, `@sealed` annotations |
+Milvus always returns HTTP 200; errors are encoded in the response body. The client always inspects the response `code` and throws typed exceptions:
 
-Dev dependencies: `test`, `mockito`, `build_runner`, `lints`
+```dart
+try {
+  await client.collections.describeCollection('nonexistent');
+} on CollectionException catch (e) {
+  print('Collection error ${e.code}: ${e.message}');
+} on AuthException catch (e) {
+  print('Auth error: ${e.message}');
+} on MilvusException catch (e) {
+  // Base class — covers all other Milvus error codes.
+  print('Milvus error ${e.code}: ${e.message}');
+}
+```
+
+| Exception class | When thrown |
+|---|---|
+| `AuthException` | Code 80 — bad credentials or missing token |
+| `CollectionException` | Codes 1000–1099 — collection-level errors |
+| `IndexException` | Codes 1100–1199 — index-level errors |
+| `EntityException` | Codes 1200–1299 — insert/delete/get errors |
+| `SearchException` | Codes 1300–1399 — search/query errors |
+| `RateLimitException` | Code 8 — server overloaded, retry with backoff |
+| `ServerException` | Codes 5000–5099 — internal server errors |
+| `MilvusException` | Base class for all other codes |
 
 ---
 
-## Prior art / reference SDKs
+## Platform support
 
-- [pymilvus](https://github.com/milvus-io/pymilvus) — Python SDK (gRPC + REST)
-- [milvus-sdk-node](https://github.com/milvus-io/milvus-sdk-node) — Node.js SDK (gRPC + HTTP fallback)
-- [milvus-sdk-java](https://github.com/milvus-io/milvus-sdk-java)
-- [milvus-sdk-go](https://github.com/milvus-io/milvus-sdk-go)
-- [milvus-proto](https://github.com/milvus-io/milvus-proto) — shared proto files
+| Platform | REST | gRPC | Notes |
+|---|---|---|---|
+| Android | ✅ | ✅ | |
+| iOS | ✅ | ✅ | |
+| Web | ✅ | ❌ | gRPC uses `dart:io`, unavailable on Web |
+| macOS | ✅ | ✅ | |
+| Linux | ✅ | ✅ | |
+| Windows | ✅ | ✅ | |
+| Server-side Dart | ✅ | ✅ | Pure Dart, no Flutter dependency |
+
+---
+
+## Running Milvus locally (Docker)
+
+```bash
+# Standalone mode — fastest way to get started
+docker run -d \
+  --name milvus-standalone \
+  -p 19530:19530 \
+  -p 9091:9091 \
+  milvusdb/milvus:v2.5.0 \
+  milvus run standalone
+```
+
+Then connect with `MilvusConfig(host: 'localhost')`. No token needed for a fresh local instance.
+
+---
+
+## Testing your own code
+
+Inject `FakeTransport` to write unit tests without a live Milvus server:
+
+```dart
+import 'package:milvus_dart/milvus_dart.dart';
+import 'package:milvus_dart/src/transport/transport.dart'; // Transport interface
+
+// See test/helpers/fake_transport.dart in the source for a ready-made helper.
+final client = MilvusClient.withTransport(myFakeTransport);
+```
 
 ---
 
 ## Roadmap
 
-| Phase | Status | Target |
-|-------|--------|--------|
-| Phase 1 — Core MVP (REST) | planned | — |
-| Phase 2 — Full REST parity | planned | — |
-| Phase 3 — gRPC transport + iterators | planned | — |
-| pub.dev publish | planned | after Phase 1 |
+| Phase | Status | Scope |
+|---|---|---|
+| **Phase 1** — Core MVP | ✅ Done | Collections, indexes, partitions, entities, search |
+| **Phase 2** — Full REST parity | ✅ Done | Databases, aliases, bulk import, users, roles, resource groups, hybrid search |
+| **Phase 3** — gRPC + iterators | ✅ Done | gRPC transport (`MilvusClient.grpc`), `SearchIterator`, `QueryIterator` |
+| **pub.dev publish** | Planned | After example and coverage gates pass |
+
+---
+
+## Contributing
+
+Issues and pull requests are welcome at [github.com/behradkhadem/milvus_dart](https://github.com/behradkhadem/milvus_dart).
+
+```bash
+dart analyze          # must be zero-issue before any PR
+dart test             # unit tests (no live Milvus needed)
+MILVUS_HOST=localhost dart test test/integration/  # integration tests
+```
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).

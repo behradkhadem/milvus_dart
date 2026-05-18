@@ -1,0 +1,20 @@
+# Dart tool cache
+.dart_tool/
+.packages
+
+# Build output
+build/
+
+# pub.dev publish cache
+.pub-cache/
+
+# Coverage output
+coverage/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# macOS
+.DS_Store

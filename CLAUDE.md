@@ -2,11 +2,14 @@
 
 Rules and conventions for working on this project. Cross-reference the `/docs/` directory for full detail.
 
+> **Status: v0.3.0 — all three phases shipped, published on pub.dev.**
+> This file now covers maintenance and future development. The phase gate checklist is kept for historical reference only.
+
 ---
 
 ## What this project is
 
-`milvus_dart` is the first unofficial Dart/Flutter client for the Milvus vector database. It targets Milvus 2.5.x/2.6.x REST API v2 as the primary transport, with gRPC added in Phase 3.
+`milvus_dart` is the first unofficial Dart/Flutter client for the Milvus vector database. It supports Milvus 2.5.x/2.6.x via REST API v2 (primary) and gRPC (opt-in, Phase 3).
 
 Full context:
 - Architecture: `docs/01-architecture.md`
@@ -126,8 +129,13 @@ See `docs/01-architecture.md` for the full layout. Key points:
 - `lib/src/transport/transport.dart` — abstract `Transport` interface
 - `lib/src/transport/http_transport.dart` — REST implementation; accepts optional `http.Client` for test injection
 - `lib/src/api/*.dart` — one file per resource domain; constructor takes `Transport`, no networking code
+  - `collection_api`, `index_api`, `partition_api`, `entity_api`, `search_api` (Phase 1)
+  - `database_api`, `alias_api`, `bulk_import_api`, `user_api`, `role_api`, `resource_group_api` (Phase 2)
+- `lib/src/transport/grpc_transport.dart` — gRPC transport (Phase 3); `grpc_transport_stub.dart` for web/non-IO targets
+- `lib/src/iterators/` — `SearchIterator` and `QueryIterator` for cursor-style pagination (Phase 3)
 - `lib/src/models/` — immutable value objects with `fromJson`/`toJson`
-- `test/helpers/fake_transport.dart` — write this file first, before any API code
+  - Subdirs: `collection/`, `database/`, `alias/`, `entity/`, `index/`, `partition/`, `bulk_import/`, `user/`, `role/`, `resource_group/`, `schema/`, `search/`
+- `test/helpers/fake_transport.dart` — the primary unit-test seam; always add helpers here rather than inline mocks
 
 ---
 
@@ -219,34 +227,65 @@ All vector encoding/decoding lives in `lib/src/models/schema/vector_encoding.dar
 
 Only add a dependency when there is no standard-library solution.
 
-| Allowed | Purpose | Phase |
-|---------|---------|-------|
-| `http` | REST transport | 1 |
-| `meta` | `@immutable`, `@sealed` | 1 |
-| `grpc` | gRPC transport | 3 only |
-| `protobuf` | Proto serialization | 3 only |
+| Allowed | Purpose |
+|---------|---------|
+| `http` | REST transport |
+| `meta` | `@immutable`, `@sealed` |
+| `grpc` | gRPC transport |
+| `protobuf` | Proto serialization |
+| `fixnum` | Required by `grpc`/`protobuf` for 64-bit integers |
 
 **Never add**: `dio`, `retrofit`, `freezed`, `json_serializable`, `get_it`, `injectable`, `riverpod`, or any code generation that inflates the dependency graph without necessity.
 
-Dev dependencies allowed: `test`, `lints`, `build_runner` (Phase 3 only), `mockito` (sparingly).
+Dev dependencies allowed: `test`, `lints`, `build_runner`, `mockito` (sparingly).
 
 ---
 
-## Phase-by-phase gate
+## Release history
 
-Do not start Phase N+1 while Phase N has any unchecked item.
+All three phases are shipped. This section is kept for historical context only — do not use it as a gate for new work.
 
-### Phase 1 gate (before any Phase 2 work)
-- [ ] All `lib/src/api/` methods for: collection, index, partition, entity, search
-- [ ] `FakeTransport` and all unit tests in `test/unit/`
-- [ ] `HttpTransport` with injectable `http.Client`, full error handling
-- [ ] `MilvusException` hierarchy
-- [ ] `VectorEncoding` for all 5 types, with tests
-- [ ] Round-trip serialization tests for all models
-- [ ] `example/main.dart` runs against a real Milvus instance
-- [ ] Coverage ≥ 88%
-- [ ] `dart analyze` zero issues
-- [ ] `dart pub publish --dry-run` passes
+### Phase 1 ✅ v0.1.0
+Collection, index, partition, entity, search APIs. `FakeTransport`, `HttpTransport`, `MilvusException`, `VectorEncoding`.
+
+### Phase 2 ✅ v0.2.0
+Database, alias, bulk import, user, role, resource group APIs. `hybridSearch` with `WeightedRanker`/`RRFRanker`. 213 unit tests.
+
+### Phase 3 ✅ v0.3.0
+gRPC transport (`GrpcTransport` + web stub), `SearchIterator` / `QueryIterator`, example updated. 227 unit tests.
+
+---
+
+## Maintenance and future development
+
+When adding a new API endpoint, method, or feature:
+
+1. **Add the API method** in the appropriate `lib/src/api/*.dart` file (or create a new domain file if the resource doesn't fit any existing one).
+2. **Add or update the model** in `lib/src/models/<domain>/`. Round-trip test required.
+3. **Write the five standard test scenarios** (happy path, transport error, `code != 0`, empty data, non-default params) before the method is considered done.
+4. **Wire it into `MilvusClient`** and re-export from `lib/milvus_dart.dart`.
+5. **Run `dart analyze` and `dart test`** — both must pass with zero issues before committing.
+6. **Update `example/`** if the feature is user-facing enough to demonstrate.
+7. **Bump the version** in `pubspec.yaml` following semver: patch for fixes, minor for new endpoints, major for breaking API changes.
+
+### Breaking-change policy
+
+This package follows semver strictly. A breaking change is any of:
+- Removing or renaming a public class, method, or field
+- Changing a method signature (parameter names, types, optionality)
+- Changing a model's `fromJson`/`toJson` field names
+- Changing exception types or their properties
+
+Before making a breaking change, open an issue and add a deprecation path in a minor release first if possible.
+
+### Versioning and publishing
+
+```bash
+dart pub publish --dry-run   # verify before every publish
+dart pub publish             # publish to pub.dev
+```
+
+See `docs/06-pubdev-publishing.md` for the full checklist.
 
 ---
 
