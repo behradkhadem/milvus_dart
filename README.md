@@ -382,7 +382,7 @@ final client = MilvusClient.withTransport(myFakeTransport);
 | **Phase 1** — Core MVP | ✅ Done | Collections, indexes, partitions, entities, search |
 | **Phase 2** — Full REST parity | ✅ Done | Databases, aliases, bulk import, users, roles, resource groups, hybrid search |
 | **Phase 3** — gRPC + iterators | ✅ Done | gRPC transport (`MilvusClient.grpc`), `SearchIterator`, `QueryIterator` |
-| **pub.dev publish** | Planned | After example and coverage gates pass |
+| **pub.dev publish** | ✅ Done | Published! |
 
 ---
 
