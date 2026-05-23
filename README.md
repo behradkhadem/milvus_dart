@@ -39,7 +39,7 @@ Targets **Milvus 2.5.x / 2.6.x**. Ships with two transports:
 
 ```yaml
 dependencies:
-  milvus_dart: ^0.1.0
+  milvus_dart: ^0.3.0
 ```
 
 ```
