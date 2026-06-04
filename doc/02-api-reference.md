@@ -27,7 +27,7 @@ All REST v2 endpoints use base path `/v2/vectordb/` and communicate with the Mil
       {
         "fieldName": "id",
         "dataType": "Int64",
-        "isPrimaryKey": true
+        "isPrimary": true
       },
       {
         "fieldName": "embedding",
@@ -83,7 +83,21 @@ Future<void> createCollection(CreateCollectionRequest request);
   "collectionID": 448707763883002000,
   "consistencyLevel": "Bounded",
   "description": "",
-  "fields": [ { "fieldName": "id", "dataType": "Int64", ... } ],
+  "fields": [
+    {
+      "name": "id",
+      "type": "Int64",
+      "primaryKey": true,
+      "autoId": false,
+      "params": []
+    },
+    {
+      "name": "embedding",
+      "type": "FloatVector",
+      "primaryKey": false,
+      "params": [{ "key": "dim", "value": "768" }]
+    }
+  ],
   "aliases": [],
   "autoID": false,
   "numPartitions": 1,
@@ -92,6 +106,11 @@ Future<void> createCollection(CreateCollectionRequest request);
   "createdTime": 1728035059
 }
 ```
+
+> **Note:** `describeCollection` uses different field keys from the create-schema format.
+> `name`/`type`/`primaryKey` in responses vs `fieldName`/`dataType`/`isPrimary` in requests.
+> `elementTypeParams` in requests are returned as `params: [{key, value}]` in responses.
+> The SDK normalises both formats transparently in `FieldSchema.fromJson()`.
 
 ---
 
@@ -334,15 +353,7 @@ Same shape as insert. Inserts if primary key not found, updates if found.
 ### delete
 `POST /v2/vectordb/entities/delete`
 
-**Request (by IDs):**
-```json
-{
-  "collectionName": "my_collection",
-  "ids": [1, 2, 3]
-}
-```
-
-**Request (by filter):**
+**Request:**
 ```json
 {
   "collectionName": "my_collection",
@@ -350,7 +361,14 @@ Same shape as insert. Inserts if primary key not found, updates if found.
 }
 ```
 
-Only one of `ids` or `filter` should be provided. `filter` is a boolean expression string.
+`filter` is **always required** (Milvus REST v2). To delete by primary keys, express them as a filter:
+- By int64 ids: `"id in [1, 2, 3]"`
+- By string ids: `"pk in ['a', 'b']"`
+- By expression: `"score < 10 and category == 'old'"`
+
+The SDK `DeleteRequest` accepts an `ids` list as a convenience and auto-generates the filter
+expression using `primaryKeyField` (defaults to `'id'`). Pass `filter` directly if your
+primary key field has a different name.
 
 **Response data:** `{ "deleteCount": 3 }`
 
@@ -409,13 +427,15 @@ Notes:
 **Response data:**
 ```json
 [
-  [
-    { "id": 42, "text": "Hello world", "distance": 0.98 }
-  ]
+  { "id": 42, "text": "Hello world", "distance": 0.98 },
+  { "id": 7,  "text": "Nearby doc",  "distance": 0.75 }
 ]
 ```
 
-Outer array corresponds to each query vector in `data`.
+The response is a **flat list** of hit objects sorted by distance. Each hit includes `id`,
+`distance`, and any requested `outputFields`. The SDK wraps this in an outer list so that
+`search()` always returns `List<List<SearchHit>>` — `results.first` gives the hits for the
+first (and typically only) query vector.
 
 ---
 
