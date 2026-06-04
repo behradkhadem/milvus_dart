@@ -106,7 +106,9 @@ Future<void> _runExample(MilvusClient client) async {
       List.generate(_dim, (_) => rng.nextDouble() * 2 - 1);
 
   final categories = ['science', 'art', 'tech', 'history', 'sports'];
-  final entities = List.generate(50, (i) => {
+  final entities = List.generate(
+      50,
+      (i) => {
         'id': i + 1,
         'category': categories[i % categories.length],
         'score': rng.nextDouble() * 100,
@@ -140,9 +142,8 @@ Future<void> _runExample(MilvusClient client) async {
 
   print('Top 5 nearest neighbours:');
   for (final hit in searchResults.first) {
-    final e = hit.entity;
-    print('  id=${e['id']}  category=${e['category']}  '
-        'score=${(e['score'] as num).toStringAsFixed(1)}  '
+    print('  id=${hit.id}  category=${hit.entity['category']}  '
+        'score=${(hit.entity['score'] as num).toStringAsFixed(1)}  '
         'distance=${hit.distance.toStringAsFixed(4)}');
   }
 
@@ -159,12 +160,16 @@ Future<void> _runExample(MilvusClient client) async {
       filter: "category == 'tech'",
       limit: 3,
       outputFields: ['id', 'category'],
-      searchParams: {'metricType': 'COSINE', 'params': {'ef': 64}},
+      searchParams: {
+        'metricType': 'COSINE',
+        'params': {'ef': 64}
+      },
     ),
   );
   print('Top 3 in "tech" category:');
   for (final hit in filteredResults.first) {
-    print('  id=${hit.entity['id']}  distance=${hit.distance.toStringAsFixed(4)}');
+    print(
+        '  id=${hit.id}  distance=${hit.distance.toStringAsFixed(4)}');
   }
 
   // ──────────────────────────────────────────────────────
@@ -246,6 +251,8 @@ Future<void> _runExample(MilvusClient client) async {
   await client.partitions.createPartition(_collection, 'archive');
   final parts = await client.partitions.listPartitions(_collection);
   print('Partitions: $parts');
+  // Release the collection from memory before dropping a partition.
+  await client.collections.releaseCollection(_collection);
   await client.partitions.dropPartition(_collection, 'archive');
 
   // ──────────────────────────────────────────────────────
@@ -253,7 +260,7 @@ Future<void> _runExample(MilvusClient client) async {
   // ──────────────────────────────────────────────────────
   print('\n=== Aliases ===');
 
-  await client.aliases.createAlias(_collection, 'articles');
+  await client.aliases.createAlias('articles', _collection);
   final aliasInfo = await client.aliases.describeAlias('articles');
   print('Alias "articles" → collection "${aliasInfo.collectionName}"');
   await client.aliases.dropAlias('articles');
@@ -273,6 +280,13 @@ Future<void> _runExample(MilvusClient client) async {
   // 12. Cleanup
   // ──────────────────────────────────────────────────────
   print('\n=== Cleanup ===');
+  try {
+    try { await client.collections.releaseCollection(_collection); } catch (_) {}
   await client.collections.dropCollection(_collection);
   print('Dropped "$_collection". Done.');
+  } catch (e) {
+    // Zilliz Cloud serverless sometimes times out on drop (code 10001).
+    // The collection will be cleaned up at the start of the next run.
+    print('Drop timed out — will be cleaned up on next run. ($e)');
+  }
 }
