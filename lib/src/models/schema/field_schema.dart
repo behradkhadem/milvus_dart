@@ -31,7 +31,7 @@ class FieldSchema {
   Map<String, dynamic> toJson() => {
         'fieldName': fieldName,
         'dataType': dataType.value,
-        if (isPrimaryKey) 'isPrimaryKey': true,
+        if (isPrimaryKey) 'isPrimary': true,
         if (isNullable) 'isNullable': true,
         if (defaultValue != null) 'defaultValue': defaultValue,
         if (elementTypeParams.isNotEmpty) 'elementTypeParams': elementTypeParams,
@@ -42,14 +42,30 @@ class FieldSchema {
   /// Handles two wire formats for `elementTypeParams`:
   /// - Create-schema format: `{"dim": 768}`
   /// - `describeCollection` format: `[{"key": "dim", "value": "768"}]`
+  /// Parses a field returned by the server.
+  ///
+  /// Handles two wire formats:
+  /// - create-schema format: `fieldName`, `dataType`, `isPrimary`, `elementTypeParams` as object
+  /// - describeCollection format: `name`, `type`, `primaryKey`, `params` as list
   factory FieldSchema.fromJson(Map<String, dynamic> json) {
+    // describeCollection uses 'name'/'type'/'primaryKey'/'params';
+    // create format uses 'fieldName'/'dataType'/'isPrimary'/'elementTypeParams'.
+    final fieldName = (json['fieldName'] ?? json['name']) as String;
+    final dataType = DataType.fromValue(
+      (json['dataType'] ?? json['type']) as String,
+    );
+    final isPrimaryKey =
+        (json['isPrimaryKey'] ?? json['isPrimary'] ?? json['primaryKey'])
+            as bool? ??
+        false;
+    final rawParams = json['elementTypeParams'] ?? json['params'];
     return FieldSchema(
-      fieldName: json['fieldName'] as String,
-      dataType: DataType.fromValue(json['dataType'] as String),
-      isPrimaryKey: json['isPrimaryKey'] as bool? ?? false,
+      fieldName: fieldName,
+      dataType: dataType,
+      isPrimaryKey: isPrimaryKey,
       isNullable: json['isNullable'] as bool? ?? false,
       defaultValue: json['defaultValue'],
-      elementTypeParams: _parseElementTypeParams(json['elementTypeParams']),
+      elementTypeParams: _parseElementTypeParams(rawParams),
     );
   }
 
