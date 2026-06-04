@@ -121,7 +121,7 @@ void main() {
   });
 
   group('delete', () {
-    test('body uses "id" key (not "ids") for primary key list', () async {
+    test('ids are converted to a filter expression', () async {
       transport.setResponse(
         '/v2/vectordb/entities/delete',
         Fixtures.deleteResultResponse,
@@ -130,9 +130,9 @@ void main() {
         DeleteRequest(collectionName: 'test_col', ids: [1, 2, 3]),
       );
       final body = transport.calls.single.body;
-      expect(body.containsKey('id'), isTrue);
-      expect(body.containsKey('ids'), isFalse);
-      expect(body['id'], [1, 2, 3]);
+      expect(body.containsKey('filter'), isTrue);
+      expect(body.containsKey('id'), isFalse);
+      expect(body['filter'], 'id in [1, 2, 3]');
     });
 
     test('body uses "filter" key when filter is provided', () async {
