@@ -4,8 +4,9 @@ import 'package:meta/meta.dart';
 ///
 /// Provide exactly one of [ids] or [filter].
 ///
-/// Note: Milvus REST v2 uses `"id"` (not `"ids"`) as the JSON key for the
-/// primary-key list in delete requests.
+/// When [ids] is provided, a filter expression is generated automatically using
+/// [primaryKeyField] (defaults to `'id'`). Milvus REST v2 requires `filter`
+/// in all delete requests — a raw id-list key is not supported.
 @immutable
 class DeleteRequest {
   final String collectionName;
@@ -16,6 +17,10 @@ class DeleteRequest {
   /// Boolean filter expression. Use instead of [ids].
   final String? filter;
 
+  /// Name of the primary key field, used to build the filter when [ids] is
+  /// provided. Defaults to `'id'`.
+  final String primaryKeyField;
+
   final String? partitionName;
   final String? dbName;
 
@@ -23,6 +28,7 @@ class DeleteRequest {
     required this.collectionName,
     this.ids,
     this.filter,
+    this.primaryKeyField = 'id',
     this.partitionName,
     this.dbName,
   }) : assert(
@@ -30,12 +36,21 @@ class DeleteRequest {
           'Provide either ids or filter',
         );
 
-  Map<String, dynamic> toJson() => {
-        'collectionName': collectionName,
-        // Milvus REST v2 uses "id", not "ids"
-        if (ids != null) 'id': ids,
-        if (filter != null) 'filter': filter,
-        if (partitionName != null) 'partitionName': partitionName,
-        if (dbName != null) 'dbName': dbName,
-      };
+  Map<String, dynamic> toJson() {
+    // Milvus REST v2 always requires a 'filter' field.
+    // When ids are provided, convert them to a filter expression.
+    final String resolvedFilter;
+    if (ids != null) {
+      final idList = ids!.map((id) => id is String ? "'$id'" : '$id').join(', ');
+      resolvedFilter = '$primaryKeyField in [$idList]';
+    } else {
+      resolvedFilter = filter ?? '';
+    }
+    return {
+      'collectionName': collectionName,
+      'filter': resolvedFilter,
+      if (partitionName != null) 'partitionName': partitionName,
+      if (dbName != null) 'dbName': dbName,
+    };
+  }
 }
