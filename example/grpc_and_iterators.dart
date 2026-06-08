@@ -1,13 +1,28 @@
-// Example: gRPC transport and cursor-based iterators.
+// Example: cursor-based iterators (with optional gRPC transport).
 //
 // Demonstrates:
-//   1. Connecting via gRPC instead of REST (same API, one constructor change)
-//   2. SearchIterator — paginating ANN results past the 16,384 offset ceiling
-//   3. QueryIterator  — paginating scalar query results
+//   1. SearchIterator — paginating ANN results past the 16,384 offset ceiling
+//   2. QueryIterator  — paginating scalar query results
+//   3. Connecting via gRPC instead of REST (opt-in via MILVUS_USE_GRPC=1)
 //
-// Requires a running Milvus instance on the native platform (not Flutter Web).
+// ── Transport selection ───────────────────────────────────────────────────────
+// By default this example uses REST (HttpTransport), which works with
+// Zilliz Cloud Serverless and every self-hosted Milvus instance.
 //
-//   MILVUS_HOST=localhost dart run example/grpc_and_iterators.dart
+// Zilliz Cloud Serverless exposes only REST on port 443.  Its HTTPS gateway
+// returns HTTP/2 error responses to gRPC requests, so native gRPC cannot be
+// used there.  If you try to force gRPC on a Serverless cluster you will see
+// UNAUTHENTICATED errors regardless of the token format.
+//
+// To use native gRPC, set MILVUS_USE_GRPC=1.  This requires either:
+//   • A self-hosted Milvus instance (e.g. Docker on localhost:19530)
+//   • A Zilliz Cloud Dedicated or Standard cluster (supports port 19530)
+//
+// Quick-start (REST, works everywhere):
+//   MILVUS_HOST=… MILVUS_TOKEN=… dart run example/grpc_and_iterators.dart
+//
+// Quick-start (gRPC, self-hosted):
+//   MILVUS_HOST=localhost MILVUS_USE_GRPC=1 dart run example/grpc_and_iterators.dart
 
 // ignore_for_file: avoid_print
 
@@ -16,36 +31,44 @@ import 'dart:math' show Random;
 
 import 'package:milvus_dart/milvus_dart.dart';
 import 'package:milvus_dart/src/transport/grpc_transport.dart';
+import 'package:milvus_dart/src/transport/http_transport.dart';
 
-const _collection = 'dart_grpc_example';
+const _collection = 'dart_iterator_example';
 const _dim = 64;
 
 void main() async {
   final host = Platform.environment['MILVUS_HOST'];
   if (host == null) {
-    print('Set MILVUS_HOST to run this example. Example:');
-    print('  MILVUS_HOST=localhost dart run example/grpc_and_iterators.dart');
+    print('Set MILVUS_HOST to run this example.');
+    print('  MILVUS_HOST=<host> MILVUS_TOKEN=<token> dart run example/grpc_and_iterators.dart');
     return;
   }
 
+  final useGrpc = Platform.environment['MILVUS_USE_GRPC'] == '1';
+
+  // REST uses port 443 (Zilliz Cloud) or 19530 with TLS disabled (self-hosted).
+  // gRPC uses port 19530 by default.
+  final defaultPort = useGrpc ? 19530 : 443;
+  final port = int.tryParse(Platform.environment['MILVUS_PORT'] ?? '') ?? defaultPort;
+
   final config = MilvusConfig(
     host: host,
-    port: int.tryParse(Platform.environment['MILVUS_PORT'] ?? '') ?? 19530,
+    useTls: useGrpc ? false : true,
+    port: port,
     token: Platform.environment['MILVUS_TOKEN'],
   );
 
-  // ── 1. gRPC client ────────────────────────────────────────────────────────
-  // MilvusClient.grpc uses binary protobuf over HTTP/2 instead of JSON.
-  // Every method — collections, search, entities — works identically.
-  // On Flutter Web, use MilvusClient(config) (REST) instead.
-  final client = MilvusClient.grpc(config);
-
-  print('Connected via gRPC to $host');
+  // Select transport based on MILVUS_USE_GRPC flag.
+  // REST works universally; gRPC requires a compatible server (see header).
+  final client = useGrpc ? MilvusClient.grpc(config) : MilvusClient(config);
+  print('Connected to $host:$port via ${useGrpc ? "gRPC" : "REST"}');
 
   try {
     await _setup(client);
-    await _demonstrateGrpc(client);
-    await _demonstrateIterators(config);
+    if (useGrpc) {
+      await _demonstrateGrpc(client);
+    }
+    await _demonstrateIterators(config, useGrpc: useGrpc);
   } finally {
     await client.close();
   }
@@ -115,10 +138,10 @@ Future<void> _setup(MilvusClient client) async {
   final result = await client.entities.insert(
     InsertRequest(collectionName: _collection, data: data),
   );
-  print('Inserted ${result.insertCount} entities via gRPC.');
+  print('Inserted ${result.insertCount} entities.');
 }
 
-// ── 2. gRPC search — identical API to REST ────────────────────────────────
+// ── gRPC demo — only runs when MILVUS_USE_GRPC=1 ─────────────────────────
 
 Future<void> _demonstrateGrpc(MilvusClient client) async {
   print('\n=== gRPC Search (same API as REST) ===');
@@ -145,7 +168,6 @@ Future<void> _demonstrateGrpc(MilvusClient client) async {
         'distance=${hit.distance.toStringAsFixed(4)}');
   }
 
-  // Scalar query — also identical to REST
   final rows = await client.search.query(
     QueryRequest(
       collectionName: _collection,
@@ -160,15 +182,14 @@ Future<void> _demonstrateGrpc(MilvusClient client) async {
   }
 }
 
-// ── 3. Iterators — transparent cursor paging ──────────────────────────────
+// ── Iterators — transparent cursor paging (works with REST or gRPC) ───────
 
-Future<void> _demonstrateIterators(MilvusConfig config) async {
+Future<void> _demonstrateIterators(MilvusConfig config, {required bool useGrpc}) async {
   print('\n=== QueryIterator (page through all 200 entities) ===');
 
-  // Iterators take a Transport directly — create one for this demo.
-  // In production you'd expose the transport from MilvusClient, or just use
-  // MilvusClient.withTransport and share the transport reference.
-  final transport = GrpcTransport(config);
+  // Iterators take a Transport directly.  Use gRPC when requested, REST
+  // otherwise.  On Zilliz Cloud Serverless, always use HttpTransport (REST).
+  final Transport transport = useGrpc ? GrpcTransport(config) : HttpTransport(config);
 
   try {
     final queryIterator = QueryIterator(
@@ -177,7 +198,7 @@ Future<void> _demonstrateIterators(MilvusConfig config) async {
         collectionName: _collection,
         outputFields: ['id', 'category'],
       ),
-      pageSize: 50, // fetch 50 rows per round-trip
+      pageSize: 50,
     );
 
     var totalRows = 0;
@@ -207,7 +228,7 @@ Future<void> _demonstrateIterators(MilvusConfig config) async {
         outputFields: ['id'],
         searchParams: {'metricType': 'COSINE', 'params': {'ef': 32}},
       ),
-      pageSize: 20, // 20 hits per round-trip
+      pageSize: 20,
     );
 
     var hitCount = 0;
@@ -215,7 +236,7 @@ Future<void> _demonstrateIterators(MilvusConfig config) async {
 
     await for (final page in searchIterator.pages()) {
       searchPageCount++;
-      final hits = page.first; // one inner list per query vector
+      final hits = page.first;
       hitCount += hits.length;
       print('  Search page $searchPageCount: ${hits.length} hits '
           '(distance ${hits.first.distance.toStringAsFixed(3)}'
@@ -231,7 +252,7 @@ Future<void> _demonstrateIterators(MilvusConfig config) async {
     await transport.close();
 
     // Cleanup
-    final cleanupClient = MilvusClient.grpc(config);
+    final cleanupClient = useGrpc ? MilvusClient.grpc(config) : MilvusClient(config);
     await cleanupClient.collections.dropCollection(_collection);
     await cleanupClient.close();
     print('\nDropped "$_collection". Done.');
