@@ -40,7 +40,8 @@ void main() async {
   final host = Platform.environment['MILVUS_HOST'];
   if (host == null) {
     print('Set MILVUS_HOST to run this example.');
-    print('  MILVUS_HOST=<host> MILVUS_TOKEN=<token> dart run example/grpc_and_iterators.dart');
+    print(
+        '  MILVUS_HOST=<host> MILVUS_TOKEN=<token> dart run example/grpc_and_iterators.dart');
     return;
   }
 
@@ -49,7 +50,8 @@ void main() async {
   // REST uses port 443 (Zilliz Cloud) or 19530 with TLS disabled (self-hosted).
   // gRPC uses port 19530 by default.
   final defaultPort = useGrpc ? 19530 : 443;
-  final port = int.tryParse(Platform.environment['MILVUS_PORT'] ?? '') ?? defaultPort;
+  final port =
+      int.tryParse(Platform.environment['MILVUS_PORT'] ?? '') ?? defaultPort;
 
   final config = MilvusConfig(
     host: host,
@@ -128,12 +130,14 @@ Future<void> _setup(MilvusClient client) async {
   final rng = Random(7);
   final categories = ['alpha', 'beta', 'gamma', 'delta'];
 
-  final data = List.generate(200, (i) => {
-        'id': i + 1,
-        'category': categories[i % categories.length],
-        'score': (rng.nextDouble() * 100).roundToDouble(),
-        'embedding': List.generate(_dim, (_) => rng.nextDouble() * 2 - 1),
-      });
+  final data = List.generate(
+      200,
+      (i) => {
+            'id': i + 1,
+            'category': categories[i % categories.length],
+            'score': (rng.nextDouble() * 100).roundToDouble(),
+            'embedding': List.generate(_dim, (_) => rng.nextDouble() * 2 - 1),
+          });
 
   final result = await client.entities.insert(
     InsertRequest(collectionName: _collection, data: data),
@@ -156,7 +160,10 @@ Future<void> _demonstrateGrpc(MilvusClient client) async {
       annsField: 'embedding',
       limit: 5,
       outputFields: ['id', 'category', 'score'],
-      searchParams: {'metricType': 'COSINE', 'params': {'ef': 32}},
+      searchParams: {
+        'metricType': 'COSINE',
+        'params': {'ef': 32}
+      },
     ),
   );
 
@@ -184,12 +191,14 @@ Future<void> _demonstrateGrpc(MilvusClient client) async {
 
 // ── Iterators — transparent cursor paging (works with REST or gRPC) ───────
 
-Future<void> _demonstrateIterators(MilvusConfig config, {required bool useGrpc}) async {
+Future<void> _demonstrateIterators(MilvusConfig config,
+    {required bool useGrpc}) async {
   print('\n=== QueryIterator (page through all 200 entities) ===');
 
   // Iterators take a Transport directly.  Use gRPC when requested, REST
   // otherwise.  On Zilliz Cloud Serverless, always use HttpTransport (REST).
-  final Transport transport = useGrpc ? GrpcTransport(config) : HttpTransport(config);
+  final Transport transport =
+      useGrpc ? GrpcTransport(config) : HttpTransport(config);
 
   try {
     final queryIterator = QueryIterator(
@@ -211,7 +220,8 @@ Future<void> _demonstrateIterators(MilvusConfig config, {required bool useGrpc})
           '(ids ${page.first['id']}–${page.last['id']})');
     }
 
-    print('Total rows fetched via QueryIterator: $totalRows across $pageCount pages.');
+    print(
+        'Total rows fetched via QueryIterator: $totalRows across $pageCount pages.');
 
     // ── SearchIterator ──────────────────────────────────────────────────────
     print('\n=== SearchIterator (page through ANN results) ===');
@@ -226,7 +236,10 @@ Future<void> _demonstrateIterators(MilvusConfig config, {required bool useGrpc})
         vectors: [queryVec],
         annsField: 'embedding',
         outputFields: ['id'],
-        searchParams: {'metricType': 'COSINE', 'params': {'ef': 32}},
+        searchParams: {
+          'metricType': 'COSINE',
+          'params': {'ef': 32}
+        },
       ),
       pageSize: 20,
     );
@@ -252,7 +265,8 @@ Future<void> _demonstrateIterators(MilvusConfig config, {required bool useGrpc})
     await transport.close();
 
     // Cleanup
-    final cleanupClient = useGrpc ? MilvusClient.grpc(config) : MilvusClient(config);
+    final cleanupClient =
+        useGrpc ? MilvusClient.grpc(config) : MilvusClient(config);
     await cleanupClient.collections.dropCollection(_collection);
     await cleanupClient.close();
     print('\nDropped "$_collection". Done.');

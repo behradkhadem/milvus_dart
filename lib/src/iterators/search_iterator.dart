@@ -50,8 +50,7 @@ class SearchIterator {
         'limit': batchSize,
       };
 
-      final data =
-          await _transport.post('/v2/vectordb/entities/search', body);
+      final data = await _transport.post('/v2/vectordb/entities/search', body);
 
       final page = (data as List<dynamic>)
           .map(

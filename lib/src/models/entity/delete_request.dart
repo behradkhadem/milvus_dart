@@ -41,7 +41,8 @@ class DeleteRequest {
     // When ids are provided, convert them to a filter expression.
     final String resolvedFilter;
     if (ids != null) {
-      final idList = ids!.map((id) => id is String ? "'$id'" : '$id').join(', ');
+      final idList =
+          ids!.map((id) => id is String ? "'$id'" : '$id').join(', ');
       resolvedFilter = '$primaryKeyField in [$idList]';
     } else {
       resolvedFilter = filter ?? '';

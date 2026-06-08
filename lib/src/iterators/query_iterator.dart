@@ -48,8 +48,7 @@ class QueryIterator {
         'limit': batchSize,
       };
 
-      final data =
-          await _transport.post('/v2/vectordb/entities/query', body);
+      final data = await _transport.post('/v2/vectordb/entities/query', body);
 
       final page = (data as List<dynamic>)
           .map((e) => e as Map<String, dynamic>)

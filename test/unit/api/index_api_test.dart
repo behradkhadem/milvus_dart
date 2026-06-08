@@ -37,8 +37,7 @@ void main() {
       transport.setResponse('/v2/vectordb/indexes/create', {});
       await api.createIndex('test_col', [hnswParams]);
       final body = transport.calls.single.body;
-      final indexParamsList =
-          body['indexParams'] as List<dynamic>;
+      final indexParamsList = body['indexParams'] as List<dynamic>;
       final p = indexParamsList.first as Map<String, dynamic>;
       expect(p['indexType'], 'HNSW');
       expect(p['metricType'], 'COSINE');

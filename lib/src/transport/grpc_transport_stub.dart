@@ -8,9 +8,9 @@ import 'transport.dart';
 /// This stub is selected by the conditional import in `milvus_client.dart`
 /// whenever the target is Flutter Web or any platform without `dart:io`.
 class GrpcTransport implements Transport {
-  factory GrpcTransport(MilvusConfig config) => throw UnsupportedError(
-      'GrpcTransport is not supported on this platform. '
-      'Use HttpTransport (REST) instead.');
+  factory GrpcTransport(MilvusConfig config) =>
+      throw UnsupportedError('GrpcTransport is not supported on this platform. '
+          'Use HttpTransport (REST) instead.');
 
   @override
   Future<dynamic> post(String path, Map<String, dynamic> body) =>

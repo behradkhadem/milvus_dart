@@ -21,7 +21,8 @@ class ResourceGroupInfo {
 
   factory ResourceGroupInfo.fromJson(Map<String, dynamic> json) {
     return ResourceGroupInfo(
-      name: json['name'] as String? ?? json['resourceGroupName'] as String? ?? '',
+      name:
+          json['name'] as String? ?? json['resourceGroupName'] as String? ?? '',
       capacity: json['capacity'] as int? ?? 0,
       availableNodeNum: json['availableNodeNum'] as int? ?? 0,
       loadedReplica: json['loadedReplica'] as int? ?? 0,

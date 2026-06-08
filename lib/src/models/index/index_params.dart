@@ -50,6 +50,5 @@ class IndexParams {
           indexType == other.indexType;
 
   @override
-  int get hashCode =>
-      Object.hash(fieldName, indexName, metricType, indexType);
+  int get hashCode => Object.hash(fieldName, indexName, metricType, indexType);
 }

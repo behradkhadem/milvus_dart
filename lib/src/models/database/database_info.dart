@@ -11,8 +11,7 @@ class DatabaseInfo {
   factory DatabaseInfo.fromJson(Map<String, dynamic> json) {
     return DatabaseInfo(
       dbName: json['dbName'] as String,
-      properties:
-          (json['properties'] as Map<String, dynamic>?) ?? const {},
+      properties: (json['properties'] as Map<String, dynamic>?) ?? const {},
     );
   }
 }

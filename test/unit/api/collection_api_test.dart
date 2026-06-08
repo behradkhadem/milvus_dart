@@ -25,7 +25,8 @@ void main() {
       collectionName: 'test_col',
       schema: CollectionSchema(
         fields: [
-          FieldSchema(fieldName: 'id', dataType: DataType.int64, isPrimaryKey: true),
+          FieldSchema(
+              fieldName: 'id', dataType: DataType.int64, isPrimaryKey: true),
           FieldSchema(
             fieldName: 'vec',
             dataType: DataType.floatVector,
@@ -113,7 +114,8 @@ void main() {
         Fixtures.describeCollectionResponse,
       );
       final info = await api.describeCollection('test_col');
-      final vecField = info.fields.firstWhere((f) => f.fieldName == 'embedding');
+      final vecField =
+          info.fields.firstWhere((f) => f.fieldName == 'embedding');
       expect(vecField.elementTypeParams['dim'], 768);
     });
 

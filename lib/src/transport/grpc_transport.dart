@@ -123,8 +123,7 @@ class GrpcTransport implements Transport {
       '/v2/vectordb/resource_groups/describe' => _describeResourceGroup(body),
       '/v2/vectordb/resource_groups/list' => _listResourceGroups(body),
       '/v2/vectordb/resource_groups/transfer_node' => _transferNode(body),
-      '/v2/vectordb/resource_groups/transfer_replica' =>
-        _transferReplica(body),
+      '/v2/vectordb/resource_groups/transfer_replica' => _transferReplica(body),
       // Bulk import — no gRPC v2 equivalent
       '/v2/vectordb/jobs/import/create' ||
       '/v2/vectordb/jobs/import/get_progress' ||
@@ -361,8 +360,8 @@ class GrpcTransport implements Transport {
     _checkStatus(await _client.loadPartitions(
       $milvus.LoadPartitionsRequest(
         collectionName: body['collectionName'] as String? ?? '',
-        partitionNames: (body['partitionNames'] as List<dynamic>? ?? [])
-            .cast<String>(),
+        partitionNames:
+            (body['partitionNames'] as List<dynamic>? ?? []).cast<String>(),
         dbName: body['dbName'] as String? ?? _database,
       ),
     ));
@@ -373,8 +372,8 @@ class GrpcTransport implements Transport {
     _checkStatus(await _client.releasePartitions(
       $milvus.ReleasePartitionsRequest(
         collectionName: body['collectionName'] as String? ?? '',
-        partitionNames: (body['partitionNames'] as List<dynamic>? ?? [])
-            .cast<String>(),
+        partitionNames:
+            (body['partitionNames'] as List<dynamic>? ?? []).cast<String>(),
         dbName: body['dbName'] as String? ?? _database,
       ),
     ));
@@ -1224,9 +1223,7 @@ class GrpcTransport implements Transport {
         type: $schema_enum.DataType.JSON,
         scalars: $schema.ScalarField(
           jsonData: $schema.JSONArray(
-            data: values
-                .map((v) => utf8.encode(jsonEncode(v)))
-                .toList(),
+            data: values.map((v) => utf8.encode(jsonEncode(v))).toList(),
           ),
         ),
       );
@@ -1249,9 +1246,7 @@ class GrpcTransport implements Transport {
       type: $schema_enum.DataType.JSON,
       scalars: $schema.ScalarField(
         jsonData: $schema.JSONArray(
-          data: values
-              .map((v) => utf8.encode(jsonEncode(v)))
-              .toList(),
+          data: values.map((v) => utf8.encode(jsonEncode(v))).toList(),
         ),
       ),
     );

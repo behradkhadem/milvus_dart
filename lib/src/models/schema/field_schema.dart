@@ -34,7 +34,8 @@ class FieldSchema {
         if (isPrimaryKey) 'isPrimary': true,
         if (isNullable) 'isNullable': true,
         if (defaultValue != null) 'defaultValue': defaultValue,
-        if (elementTypeParams.isNotEmpty) 'elementTypeParams': elementTypeParams,
+        if (elementTypeParams.isNotEmpty)
+          'elementTypeParams': elementTypeParams,
       };
 
   /// Parses a field returned by the server.
@@ -54,9 +55,9 @@ class FieldSchema {
     final dataType = DataType.fromValue(
       (json['dataType'] ?? json['type']) as String,
     );
-    final isPrimaryKey =
-        (json['isPrimaryKey'] ?? json['isPrimary'] ?? json['primaryKey'])
-            as bool? ??
+    final isPrimaryKey = (json['isPrimaryKey'] ??
+            json['isPrimary'] ??
+            json['primaryKey']) as bool? ??
         false;
     final rawParams = json['elementTypeParams'] ?? json['params'];
     return FieldSchema(

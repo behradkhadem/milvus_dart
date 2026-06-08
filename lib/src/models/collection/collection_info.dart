@@ -49,8 +49,7 @@ class CollectionInfo {
       fields: (json['fields'] as List<dynamic>? ?? [])
           .map((f) => FieldSchema.fromJson(f as Map<String, dynamic>))
           .toList(),
-      aliases:
-          (json['aliases'] as List<dynamic>? ?? []).cast<String>(),
+      aliases: (json['aliases'] as List<dynamic>? ?? []).cast<String>(),
       autoId: json['autoID'] as bool? ?? false,
       numPartitions: json['numPartitions'] as int? ?? 0,
       enableDynamicField: json['enableDynamicField'] as bool? ?? false,

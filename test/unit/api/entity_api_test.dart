@@ -31,12 +31,14 @@ void main() {
       final req = InsertRequest(
         collectionName: 'test_col',
         data: [
-          {'id': 1, 'embedding': [0.1, 0.2, 0.3]},
+          {
+            'id': 1,
+            'embedding': [0.1, 0.2, 0.3]
+          },
         ],
       );
       await api.insert(req);
-      final entities =
-          transport.calls.single.body['data'] as List<dynamic>;
+      final entities = transport.calls.single.body['data'] as List<dynamic>;
       final entity = entities.first as Map<String, dynamic>;
       expect(entity['embedding'], [0.1, 0.2, 0.3]);
     });
@@ -54,8 +56,7 @@ void main() {
         ],
       );
       await api.insert(req);
-      final entities =
-          transport.calls.single.body['data'] as List<dynamic>;
+      final entities = transport.calls.single.body['data'] as List<dynamic>;
       final entity = entities.first as Map<String, dynamic>;
       expect(entity['binary_vec'], isA<String>());
       expect(base64Decode(entity['binary_vec'] as String), bytes);
@@ -76,8 +77,7 @@ void main() {
         ],
       );
       await api.insert(req);
-      final entities =
-          transport.calls.single.body['data'] as List<dynamic>;
+      final entities = transport.calls.single.body['data'] as List<dynamic>;
       final entity = entities.first as Map<String, dynamic>;
       expect(entity['sparse_vec'], {'3': 0.8, '17': 0.2});
     });

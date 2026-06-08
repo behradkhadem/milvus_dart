@@ -109,11 +109,11 @@ Future<void> _runExample(MilvusClient client) async {
   final entities = List.generate(
       50,
       (i) => {
-        'id': i + 1,
-        'category': categories[i % categories.length],
-        'score': rng.nextDouble() * 100,
-        'embedding': randomVec(),
-      });
+            'id': i + 1,
+            'category': categories[i % categories.length],
+            'score': rng.nextDouble() * 100,
+            'embedding': randomVec(),
+          });
 
   final insertResult = await client.entities.insert(
     InsertRequest(collectionName: _collection, data: entities),
@@ -168,8 +168,7 @@ Future<void> _runExample(MilvusClient client) async {
   );
   print('Top 3 in "tech" category:');
   for (final hit in filteredResults.first) {
-    print(
-        '  id=${hit.id}  distance=${hit.distance.toStringAsFixed(4)}');
+    print('  id=${hit.id}  distance=${hit.distance.toStringAsFixed(4)}');
   }
 
   // ──────────────────────────────────────────────────────
@@ -281,9 +280,11 @@ Future<void> _runExample(MilvusClient client) async {
   // ──────────────────────────────────────────────────────
   print('\n=== Cleanup ===');
   try {
-    try { await client.collections.releaseCollection(_collection); } catch (_) {}
-  await client.collections.dropCollection(_collection);
-  print('Dropped "$_collection". Done.');
+    try {
+      await client.collections.releaseCollection(_collection);
+    } catch (_) {}
+    await client.collections.dropCollection(_collection);
+    print('Dropped "$_collection". Done.');
   } catch (e) {
     // Zilliz Cloud serverless sometimes times out on drop (code 10001).
     // The collection will be cleaned up at the start of the next run.
