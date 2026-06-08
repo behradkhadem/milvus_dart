@@ -39,7 +39,7 @@ Targets **Milvus 2.5.x / 2.6.x**. Ships with two transports:
 
 ```yaml
 dependencies:
-  milvus_dart: ^0.3.0
+  milvus_dart: ^0.3.1
 ```
 
 ```
@@ -382,7 +382,7 @@ final client = MilvusClient.withTransport(myFakeTransport);
 | **Phase 1** — Core MVP | ✅ Done | Collections, indexes, partitions, entities, search |
 | **Phase 2** — Full REST parity | ✅ Done | Databases, aliases, bulk import, users, roles, resource groups, hybrid search |
 | **Phase 3** — gRPC + iterators | ✅ Done | gRPC transport (`MilvusClient.grpc`), `SearchIterator`, `QueryIterator` |
-| **pub.dev publish** | ✅ Done | Published! |
+| **pub.dev publish** | ✅ Done | Published at pub.dev/packages/milvus_dart |
 
 ---
 

@@ -20,11 +20,10 @@ void main() {
   });
 
   group('search', () {
+    // REST API v2 returns a flat list of hits (not nested per query vector).
     final searchResult = [
-      [
-        {'id': 42, 'distance': 0.98, 'text': 'hello'},
-        {'id': 7, 'distance': 0.75, 'text': 'world'},
-      ],
+      {'id': 42, 'distance': 0.98, 'text': 'hello'},
+      {'id': 7, 'distance': 0.75, 'text': 'world'},
     ];
 
     test('sends data as array (even for single query vector)', () async {

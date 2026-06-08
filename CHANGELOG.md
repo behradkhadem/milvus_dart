@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`FieldSchema` JSON alignment** — renamed serialized key from `isPrimaryKey` to `isPrimary`; `fromJson` now handles both `createCollection` and `describeCollection` wire formats with fallback for field, data-type, and param key variants.
+- **`SearchApi` response parsing** — REST API v2 returns a flat hit list, not nested groups; the parsed list is now wrapped in an outer list to preserve the existing return type.
+- **`DeleteRequest` wire format** — aligns with REST v2's filter-only delete: added `primaryKeyField` parameter, IDs are converted to a filter expression instead of being sent as a raw list, and `filter` is always included in the serialized JSON.
+- **gRPC `Authorization` header** — removed duplicate `Bearer` prefix; fixed null-safety handling in `GrpcTransport`.
+- **Example fixes** — corrected reversed `createAlias` argument order; updated search hit access to `hit.id`; added `releaseCollection` before partition drop; wrapped collection drop in `try/catch` for serverless timeout resilience.
+- **Unit test alignment** — updated `schema_test`, `entity_api_test`, and `search_api_test` to match the corrected wire-format behavior above.
+
 ---
 
 ## [0.3.0] - 2026-05-18

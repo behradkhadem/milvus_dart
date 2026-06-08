@@ -44,7 +44,7 @@ class GrpcTransport implements Transport {
       _channel,
       options: config.token != null
           ? grpc.CallOptions(
-              metadata: {'authorization': 'Bearer ${config.token}'},
+              metadata: {'authorization': config.token!},
               timeout: config.requestTimeout,
             )
           : grpc.CallOptions(timeout: config.requestTimeout),

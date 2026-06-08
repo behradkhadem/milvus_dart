@@ -48,7 +48,7 @@ void main() {
       final j = f.toJson();
       expect(j['fieldName'], 'id');
       expect(j['dataType'], 'Int64');
-      expect(j['isPrimaryKey'], true);
+      expect(j['isPrimary'], true);
       expect(j.containsKey('isNullable'), isFalse);
     });
 

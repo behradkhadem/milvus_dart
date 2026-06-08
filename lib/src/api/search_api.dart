@@ -21,13 +21,13 @@ class SearchApi {
       '/v2/vectordb/entities/search',
       request.toJson(),
     );
-    return (data as List<dynamic>)
-        .map(
-          (group) => (group as List<dynamic>)
-              .map((hit) => SearchHit.fromJson(hit as Map<String, dynamic>))
-              .toList(),
-        )
-        .toList();
+    // REST API v2 always returns a flat list of hits regardless of how many
+    // query vectors were sent — wrap in an outer list to keep the return type.
+    return [
+      (data as List<dynamic>)
+          .map((hit) => SearchHit.fromJson(hit as Map<String, dynamic>))
+          .toList(),
+    ];
   }
 
   /// Queries entities by a scalar filter expression.
