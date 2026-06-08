@@ -2,7 +2,7 @@ name: milvus_dart
 description: >-
   Unofficial Dart/Flutter client for Milvus — the open-source vector database.
   Supports collections, indexes, vector search, hybrid search, and full RBAC.
-version: 0.3.0
+version: 0.3.1
 
 homepage: https://github.com/behradkhadem/milvus_dart
 repository: https://github.com/behradkhadem/milvus_dart
