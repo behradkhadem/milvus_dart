@@ -45,7 +45,8 @@ jobs:
           dart pub global activate coverage
           dart test test/unit/ --coverage=coverage
           dart pub global run coverage:format_coverage \
-            --packages=.dart_tool/package_config.json \
+            --in coverage \
+            --package . \
             --report-on=lib --lcov -o coverage/lcov.info
 
       - name: Upload coverage to Codecov
